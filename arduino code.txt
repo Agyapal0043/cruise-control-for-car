@@ -1,0 +1,135 @@
+#include <SoftwareSerial.h>
+
+SoftwareSerial BTSerial(5, 2); // RX, TX
+
+
+
+
+int setcrpin=4;
+int speedUppin=8;
+int speedDnpin=12;
+int speedUp;
+int speedDn;
+bool speedupold=true;
+bool speeddnold=true;
+bool speedupcurr=true;
+bool speeddncurr=true;
+bool setcr=true;
+int cruisepin=3;
+bool cruise=true;
+bool cruisef=false;
+bool cruiseold=true;
+bool setcrf=false;
+bool setcrold=true;
+int relaypin=13;
+int vspeedpin=A5;
+float acc1In;
+float acc2In;
+float acc1Out;
+float acc2Out;
+int cruisespeed;
+int ecu1=9;
+int ecu2=10;
+
+
+void setup()
+{
+ pinMode(LED_BUILTIN, OUTPUT);
+ digitalWrite(LED_BUILTIN, HIGH);
+ Serial.begin(9600);
+  pinMode(setcrpin,INPUT);
+  pinMode(vspeedpin,INPUT);
+  pinMode(cruisepin, INPUT);
+  pinMode(speedUppin,INPUT);
+  pinMode(speedDnpin,INPUT);
+  pinMode(relaypin,OUTPUT);
+  pinMode(ecu1,OUTPUT);
+  pinMode(ecu2,OUTPUT);
+}
+
+void loop()
+{
+ 
+ 
+ speedUp=digitalRead(speedUppin);
+  speedDn=digitalRead(speedDnpin);
+  setcr=digitalRead(setcrpin);
+  cruise=digitalRead(cruisepin);
+  Serial.println(setcr);
+  if(cruise==0&&cruiseold==1)
+  {
+    cruisef=!cruisef;
+  }
+    cruiseold=cruise;
+ 
+  
+  if(cruisef)
+  {
+   
+  if(setcr==0&&setcrold==1)
+  {
+    setcrf=!setcrf;
+    acc1Out=acc1In;
+    acc2Out=acc2In;
+   
+  }
+    setcrold=setcr;
+   
+    
+   if(speedUp==0)
+   {
+     cruisespeed+=2;
+      Serial.println("speeding up");
+   }
+    if(speedDn==0)
+   {
+     cruisespeed-=2;
+      Serial.println("speeding down");
+   }
+    speedupold=speedUp;
+    speeddnold=speedDn;
+   cruisespeed=max(cruisespeed,60);
+   cruisespeed=min(cruisespeed,140);
+    Serial.print(kph); Serial.println("car di speed");
+    
+  
+    
+  float difference=cruisespeed-kph;
+     acc1Out+=(float)difference/80.00*4;
+    acc1Out=min(acc1Out,220);
+    acc1Out=max(acc1Out,96);
+  int acc1vlt=(255./1023.)*acc1Out;
+  int acc2vlt=(255./1023.)*acc1Out*2;
+  analogWrite(ecu1,acc1vlt);
+  analogWrite(ecu2,acc2vlt);
+  Serial.print(difference); Serial.println("deff");
+  Serial.print(cruisespeed); Serial.println("cruise speed");
+  Serial.print(acc1Out);  Serial.println("acc1 out a");   
+      
+      if(setcrf && kph>=60 && kph<=140)
+   {
+     digitalWrite(relaypin,HIGH);
+      Serial.println("Cruise control activated");
+   }
+    else
+    {
+      digitalWrite(relaypin,LOW);
+      Serial.println("Cruise control not activated");
+    }
+    
+  
+    
+    
+    
+    
+  }
+  else
+  {
+    digitalWrite(relaypin,LOW);
+    setcrf=false;
+  }
+  
+  
+
+ 
+}
